@@ -1,16 +1,18 @@
-const { Pool } = require('pg')
+const postgres = require('postgres');
+require('dotenv').config();
 
-const pool = new Pool({
-    user:"postgres",
-    password:"GEIpWdEspYdHhwpzkoaFvVdBlFKVwGAF",
-    host:"roundhouse.proxy.rlwy.net",
-    port:34775,
-    database: "railway"
-})
+let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD, ENDPOINT_ID } = process.env;
 
-pool.connect((err) => {
-    if (err) throw err
-    console.log("Connect to PostgreSQL successfully!")
-})
+const sql = postgres({
+    host: PGHOST,
+    database: PGDATABASE,
+    username: PGUSER,
+    password: PGPASSWORD,
+    port: 5432,
+    ssl: 'require',
+    connection: {
+      options: `project=${ENDPOINT_ID}`,
+    },
+  });
 
-module.exports = pool
+module.exports = sql
