@@ -15,10 +15,13 @@ router.post("/auth/supportRequest", authController.supportRequest);
 router.post("/user/changeEmail", userController.changeEmail);
 router.get("/user/getUser", userController.getUser);
 router.post("/user/changePassword", userController.changePassword);
-router.get("/user/getUser", userController.getUser);
+router.post("/user/createTransaction", userController.createTransaction);
+router.post("/user/confirmTransaction", userController.confirmTransaction);
+router.post("/product/generateProduct", productController.generateProduct);
 router.get("/product/getAllProducts", productController.getAllProducts);
 router.get("/product/getProductById/:id", productController.getProductById);
 router.delete('/product/deleteProductById/:id', productController.deleteProductById);
-router.get("/operation/latestOperations", operationController.getAllOperations);
+router.post("/product/updateProduct", productController.updateProduct);
+router.get("/operation/getAllOperations", operationController.getAllOperations);
 
 module.exports = router;

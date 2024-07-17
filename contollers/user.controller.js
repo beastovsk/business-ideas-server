@@ -1,6 +1,7 @@
 const sql = require("../database");
 const bcrypt = require("bcryptjs");
 const { generateToken, decodeToken } = require("../utils");
+const { v4: uuidv4 } = require("uuid")
 
 const userController = {
   getUser: async (req, res) => {
@@ -89,24 +90,141 @@ const userController = {
       res.status(500).json({ error: "Ошибка сервера" });
     }
   },
-  updateSubscription: async (req, res) => {
+  createTransaction: async (req, res) => {
     try {
-      res.json({
-        message: "Подписка успешно оформлена",
-      });
-    } catch (error) {
-      res.status(500).json({ error: "Ошибка сервера" });
+			const { paymentMethod, fullName, amount, phoneNumber } = req.body;
+			const [_, token] = req.headers.authorization.split(" ");
+			const { email } = decodeToken({ token });
+
+			const userResult =
+				await sql`SELECT * FROM "users" WHERE email = ${email}`;
+			if (userResult.length === 0) {
+				return res.status(200).json({ message: "Невалидный токен" });
+			}
+
+			// Check if promo code is valid
+			if (paymentMethod === "card") {
+				const authString = `${process.env.YOOKASSA_SHOP_ID}:${process.env.YOOKASSA_API_KEY}`;
+
+				const url = "https://api.yookassa.ru/v3/payments";
+				const headers = new Headers({
+					Authorization: `Basic ${Buffer.from(authString).toString(
+						"base64"
+					)}`,
+					"Idempotence-Key": uuidv4(), // Генерируем уникальный ключ идемпотентности
+					"Content-Type": "application/json",
+				});
+
+				return await fetch(url, {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						amount: {
+							currency: "RUB",
+							value: amount,
+						},
+						capture: true,
+						confirmation: {
+							type: "redirect",
+							return_url:
+								"https://marketing-helper.ru/payment?paymentStatus=success",
+						},
+						description: `Пополнение счёта на: ${amount}`,
+						receipt: {
+							customer: { fullName, phoneNumber, email },
+							items: [
+								{
+									description: `Транзакция на  "${amount}"`,
+									quantity: "1.00",
+									amount: {
+										currency: "RUB",
+										value: amount,
+									},
+									vat_code: "2",
+									payment_mode: "full_prepayment",
+									payment_subject: "commodity",
+								},
+							],
+						},
+					}),
+				})
+					.then(async (response) => {
+						const data = await response.json();
+						if (data.status === "error") {
+							return Promise.reject("Auth error");
+						}
+						return data;
+					})
+					.then((data) => {
+						res.json(data);
+					})
+					.catch((error) => {
+						res.json({
+							error,
+						});
+					});
+			}
+
+			res.json({ message: "Произошла ошибка при оплате" });
+		} catch (error) {
+			res.status(500).json({ error: "Ошибка сервера" });
+		}
+},
+confirmTransaction: async (req, res) => {
+  try {
+    const { uuid, paymentMethod, fullName, amount, phoneNumber } = req.body;
+    const [_, token] = req.headers.authorization.split(" ");
+    const { email } = decodeToken({ token });
+
+    const userResult =
+      await sql`SELECT * FROM "users" WHERE email = ${email}`;
+    if (userResult.length === 0) {
+      return res.status(200).json({ message: "Невалидный токен" });
     }
-  },
-  removeSubscription: async (req, res) => {
-    try {
-      res.json({
-        message: "Подписка успешно отменена",
-      });
-    } catch (error) {
-      res.status(500).json({ error: "Ошибка сервера" });
+
+    const updateSubscriptionAndPartnerIncome = async (status) => {
+      if (status === "paid" || status === "succeeded") {
+
+        await sql`UPDATE "user" SET "balance" = "balance" + ${amount} WHERE email = ${email}`;
+      }
+      return res.json({ status });
+    };
+
+    if (paymentMethod === "card") {
+      const authString = `${process.env.YOOKASSA_SHOP_ID}:${process.env.YOOKASSA_API_KEY}`;
+      const url = `https://api.yookassa.ru/v3/payments/${uuid}`;
+      const headers = {
+        Authorization: `Basic ${Buffer.from(authString).toString(
+          "base64"
+        )}`,
+        "Idempotence-Key": uuidv4(), // Генерируем уникальный ключ идемпотентности
+        "Content-Type": "application/json",
+      };
+      return await fetch(url, {
+        method: "GET",
+        headers,
+      })
+        .then(async (response) => {
+          const data = await response.json();
+          return data;
+        })
+        .then(async (data) => {
+          if (!data.paid) return res.json({ paid: data.paid });
+          if (data.paid) {
+            return await updateSubscriptionAndPartnerIncome(
+              data.status
+            );
+          }
+        })
+        .catch((error) => {
+          return res.json({ error });
+        });
     }
-  },
+    res.json({ message: "Произошла ошибка при оплате" });
+  } catch (error) {
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+}
 };
 
 module.exports = userController;
