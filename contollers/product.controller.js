@@ -92,7 +92,7 @@ const productController = {
 			const date = new Date().toISOString(); // Получаем текущую дату в формате YYYY-MM-DD
 			const info = { req: { ...req.body }, res: content };
 			const user =
-				await sql`SELECT balance FROM "user" WHERE id = ${userId}`;
+				await sql`SELECT balance FROM "users" WHERE id = ${userId}`;
 			const result = await sql`
                 INSERT INTO "product" (
                     title,
@@ -120,7 +120,7 @@ const productController = {
             `;
 			const newBalance = Number(user[0].balance) - Number(amount);
 
-			await sql`UPDATE "user" SET balance = ${newBalance} WHERE id = ${userId} `;
+			await sql`UPDATE "users" SET balance = ${newBalance} WHERE id = ${userId} `;
 			res.json({
 				message: "Продукт успешно сгенерирован",
 				product: result[0],
