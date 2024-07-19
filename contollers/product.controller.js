@@ -66,17 +66,17 @@ const productController = {
 
 			            В следущем формате:
 			            {
-			                productName: '',
-			                productDescription: '',
-			                features: [],
-			                benefits: [],
-			                targetAudience: '',
-			                marketAnalysis: '',
-			                competitiveAdvantage: '',
-			                estimatedBudget: '',
-			                potentialChallenges: '',
-			                additionalRecommendations: '',
-			                uniqueOffer: ''
+			                "productName": 'value',
+			                "productDescription": 'value',
+			                "features": ["value-n"],
+			                "benefits": ["value-n"],
+			                "targetAudience": 'value',
+			                "marketAnalysis": 'value',
+			                "competitiveAdvantage": 'value',
+			                "estimatedBudget": 'value',
+			                "potentialChallenges": 'value',
+			                "additionalRecommendations": 'value',
+			                "uniqueOffer": 'value'
 			            }
 
 			            Отвечай развернуто, особенно для списком (массивов). Учитай данные пользователей и их предпочтения
@@ -92,6 +92,7 @@ const productController = {
 			});
 
 			const content = responseOpenai.choices[0].message.content;
+			console.log(content);
 			const response = JSON.parse(content);
 			const date = new Date().toISOString(); // Получаем текущую дату в формате YYYY-MM-DD
 			const info = { req: { ...req.body }, res: content };
@@ -177,7 +178,7 @@ const productController = {
 			const { id } = req.params;
 
 			const result = await sql`
-                SELECT id, title, description, date, amount
+                SELECT *
                 FROM "product"
                 WHERE id = ${id} AND userid = ${userId}
             `;
