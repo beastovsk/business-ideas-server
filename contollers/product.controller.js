@@ -91,6 +91,8 @@ const productController = {
 			const amount = tokens * cost_per_token_rub;
 			const date = new Date().toISOString(); // Получаем текущую дату в формате YYYY-MM-DD
 			const info = { req: { ...req.body }, res: content };
+			const user =
+				await sql`SELECT balance FROM "user" WHERE id = ${userId}`;
 			const result = await sql`
                 INSERT INTO "product" (
                     title,
@@ -116,7 +118,9 @@ const productController = {
                     ${userId}
                 ) RETURNING *;
             `;
+			const newBalance = Number(mutate) - Number(amount);
 
+			await sql`UPDATE "user" SET balance = ${newBalance} WHERE id = ${userId} `;
 			res.json({
 				message: "Продукт успешно сгенерирован",
 				product: result[0],

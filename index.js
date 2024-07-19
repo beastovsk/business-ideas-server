@@ -13,8 +13,7 @@ const corsOptions = {
 	origin: [
 		"http://localhost:3000",
 		"http://127.0.0.1:3000",
-		"https://webi-agency.ru",
-		"https://webi-app.vercel.app",
+		"https://startup-idea.ru",
 	],
 	credentials: true,
 	methods: ["GET", "POST", "DELETE", "PATCH", "PUT"],
