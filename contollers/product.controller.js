@@ -22,7 +22,7 @@ const productController = {
 				market,
 				implementationTime,
 				comments,
-			} = productDetails;
+			} = req.body;
 
 			const messages = [
 				{
@@ -118,7 +118,7 @@ const productController = {
                     ${userId}
                 ) RETURNING *;
             `;
-			const newBalance = Number(mutate) - Number(amount);
+			const newBalance = Number(user[0].balance) - Number(amount);
 
 			await sql`UPDATE "user" SET balance = ${newBalance} WHERE id = ${userId} `;
 			res.json({
