@@ -95,7 +95,7 @@ const productController = {
 			const response = JSON.parse(content);
 			const date = new Date().toISOString(); // Получаем текущую дату в формате YYYY-MM-DD
 			const info = { req: { ...req.body }, res: content };
-
+			console.log(info);
 			const result = await sql`
                 INSERT INTO "product" (
                     title,
@@ -121,7 +121,8 @@ const productController = {
                     ${userId}
                 ) RETURNING *;
             `;
-			const newBalance = Number(user[0].balance) - 100;
+			const newBalance = user[0].balance - 100;
+			console.log(newBalance);
 			await sql`UPDATE "users" SET balance = ${newBalance} WHERE id = ${userId} `;
 			res.status(200).json({
 				message: "Продукт успешно сгенерирован",
