@@ -92,11 +92,9 @@ const productController = {
 			});
 
 			const content = responseOpenai.choices[0].message.content;
-			console.log(content);
 			const response = JSON.parse(content);
-			const date = new Date().toISOString(); // Получаем текущую дату в формате YYYY-MM-DD
+			const date = new Date().toISOString();
 			const info = { req: { ...req.body }, res: content };
-			console.log(info);
 			const result = await sql`
                 INSERT INTO "product" (
                     title,
@@ -123,8 +121,8 @@ const productController = {
                 ) RETURNING *;
             `;
 			const newBalance = user[0].balance - 100;
-			console.log(newBalance);
 			await sql`UPDATE "users" SET balance = ${newBalance} WHERE id = ${userId} `;
+			await sql`INSERT INTO "operations" (type, date, status, amount) VALUES ("Генерация продукта", ${date}, "Успешно", ${100})`;
 			res.status(200).json({
 				message: "Продукт успешно сгенерирован",
 				product: result[0],
