@@ -23,7 +23,14 @@ const productController = {
 				implementationTime,
 				comments,
 			} = req.body;
+			const user =
+				await sql`SELECT balance FROM "users" WHERE id = ${userId}`;
 
+			if (user[0].balance < 100) {
+				return res.json({
+					message: "Недостаточно средств для генерации",
+				});
+			}
 			const messages = [
 				{
 					role: "system",
@@ -32,67 +39,63 @@ const productController = {
 				},
 				{
 					role: "user",
-					content: `Сгенерируй продукт для бизнеса на русском языке для российского рынка в валидном JSON формате. 
-                        Пользователь ввел:
-                        niche: ${niche},
-                        otherNiche (если не пусто, то это конкретная ниша): ${otherNiche},
-                        budgetFrom: ${budgetFrom},
-                        budgetTo: ${budgetTo},
-                        targetAudience: ${targetAudience},
-                        profession (если не пусто, то пользователь видит это как ЦА): ${profession},
-                        productType: ${productType},
-                        market: ${market},
-                        implementationTime: ${implementationTime},
-                        comments (если не пусто, то обязательны для генерации): ${comments},
+					content: `Сгенерируй продукт для бизнеса на русском языке для российского рынка в валидном JSON формате.
+			            Пользователь ввел:
+			            niche: ${niche},
+			            otherNiche (если не пусто, то это конкретная ниша): ${otherNiche},
+			            budgetFrom: ${budgetFrom},
+			            budgetTo: ${budgetTo},
+			            targetAudience: ${targetAudience},
+			            profession (если не пусто, то пользователь видит это как ЦА): ${profession},
+			            productType: ${productType},
+			            market: ${market},
+			            implementationTime: ${implementationTime},
+			            comments (если не пусто, то обязательны для генерации): ${comments},
 
-                        На основе этих данных, выдай мне следущие пункты:
-                        1. Название продукта
-                        2. Описание продукта
-                        3. Основные характеристики и преимущества
-                        4. Целевую аудиторию
-                        5. Анализ рынка
-                        6. Конкурентные преимущества
-                        7. Предполагаемый бюджет и сроки
-                        8. Возможные проблемы и пути их решения
-                        9. Дополнительные рекомендации
-                        10. Уникальное предложение продукта
+			            На основе этих данных, выдай мне следущие пункты:
+			            1. Название продукта
+			            2. Описание продукта
+			            3. Основные характеристики и преимущества
+			            4. Целевую аудиторию
+			            5. Анализ рынка
+			            6. Конкурентные преимущества
+			            7. Предполагаемый бюджет и сроки
+			            8. Возможные проблемы и пути их решения
+			            9. Дополнительные рекомендации
+			            10. Уникальное предложение продукта
 
-                        В следущем формате:
-                        {
-                            productName: '',
-                            productDescription: '',
-                            features: [],
-                            benefits: [],
-                            targetAudience: '',
-                            marketAnalysis: '',
-                            competitiveAdvantage: '',
-                            estimatedBudget: '',
-                            potentialChallenges: '',
-                            additionalRecommendations: '',
-                            uniqueOffer: ''
-                        }
+			            В следущем формате:
+			            {
+			                productName: '',
+			                productDescription: '',
+			                features: [],
+			                benefits: [],
+			                targetAudience: '',
+			                marketAnalysis: '',
+			                competitiveAdvantage: '',
+			                estimatedBudget: '',
+			                potentialChallenges: '',
+			                additionalRecommendations: '',
+			                uniqueOffer: ''
+			            }
 
-                        Отвечай развернуто, особенно для списком (массивов). Учитай данные пользователей и их предпочтения
-                        `,
+			            Отвечай развернуто, особенно для списком (массивов). Учитай данные пользователей и их предпочтения
+			            `,
 				},
 			];
 
-			const response = await openai.chat.completions.create({
+			const responseOpenai = await openai.chat.completions.create({
 				model: "gpt-3.5-turbo",
 				messages: messages,
 				max_tokens: 2048,
 				temperature: 0.7,
 			});
 
-			const content = response.choices[0].message.content;
-			const res = JSON.parse(content);
-			const tokens = response.usage.total_tokens;
-			const cost_per_token_rub = 1 / 1000; // 1 рубль за 1000 токенов
-			const amount = tokens * cost_per_token_rub;
+			const content = responseOpenai.choices[0].message.content;
+			const response = JSON.parse(content);
 			const date = new Date().toISOString(); // Получаем текущую дату в формате YYYY-MM-DD
 			const info = { req: { ...req.body }, res: content };
-			const user =
-				await sql`SELECT balance FROM "users" WHERE id = ${userId}`;
+
 			const result = await sql`
                 INSERT INTO "product" (
                     title,
@@ -106,10 +109,10 @@ const productController = {
                     priority,
                     userId
                 ) VALUES (
-                    ${res.productName},
-                    ${res.productDescription},
+                    ${response.productName},
+                    ${response.productDescription},
                     ${date},
-                    ${amount},
+                    ${100},
                     ${JSON.stringify(info)},
                     ${"false"},
                     ${"created"},
@@ -118,10 +121,9 @@ const productController = {
                     ${userId}
                 ) RETURNING *;
             `;
-			const newBalance = Number(user[0].balance) - Number(amount);
-
+			const newBalance = Number(user[0].balance) - 100;
 			await sql`UPDATE "users" SET balance = ${newBalance} WHERE id = ${userId} `;
-			res.json({
+			res.status(200).json({
 				message: "Продукт успешно сгенерирован",
 				product: result[0],
 			});
