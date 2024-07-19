@@ -17,7 +17,7 @@ router.get("/user/getUser", userController.getUser);
 router.post("/user/changePassword", userController.changePassword);
 router.post("/user/createTransaction", userController.createTransaction);
 router.post("/user/confirmTransaction", userController.confirmTransaction);
-// router.post("/product/generateProduct", productController.generateProduct);
+router.post("/product/generateProduct", productController.generateProduct);
 router.get("/product/getAllProducts", productController.getAllProducts);
 router.get("/product/getProductById/:id", productController.getProductById);
 router.delete(
