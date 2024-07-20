@@ -4,7 +4,7 @@ CREATE TABLE Users (
     password VARCHAR(255) NOT NULL,
     is_confirmed BOOLEAN DEFAULT FALSE,
     confirm_token VARCHAR(255),
-    balance INT DEFAULT 100
+    balance INT DEFAULT 300
 );
 
 

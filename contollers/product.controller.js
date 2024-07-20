@@ -122,7 +122,7 @@ const productController = {
             `;
 			const newBalance = user[0].balance - 100;
 			await sql`UPDATE "users" SET balance = ${newBalance} WHERE id = ${userId} `;
-			await sql`INSERT INTO "operations" (type, date, status, amount) VALUES ("Генерация продукта", ${date}, "Успешно", ${100})`;
+			await sql`INSERT INTO "operations" (userid, type, date, status, amount) VALUES (${userId}, 'Генерация продукта', ${date}, 'Успешно', 100)`;
 			res.status(200).json({
 				message: "Продукт успешно сгенерирован",
 				product: result[0],
@@ -140,7 +140,6 @@ const productController = {
 
 			let result;
 			if (isLatest) {
-				// Получение последних 5 продуктов для конкретного пользователя
 				result = await sql`
                     SELECT id, title, description, date, amount
                     FROM "product"
@@ -149,7 +148,6 @@ const productController = {
                     LIMIT 5
                 `;
 			} else {
-				// Получение всех продуктов для конкретного пользователя
 				result = await sql`
                     SELECT id, title, description, date, amount
                     FROM "product"
@@ -160,7 +158,7 @@ const productController = {
 			if (result.length === 0) {
 				return res
 					.status(200)
-					.json({ products: [], message: "No products found" });
+					.json({ products: [], message: "Продукт не найден" });
 			}
 
 			res.json({ products: result });
@@ -171,54 +169,94 @@ const productController = {
 	},
 	getProductById: async (req, res) => {
 		try {
-			const [_, token] = req.headers.authorization.split(" ");
-			const { id: userId } = decodeToken({ token });
-			const { id } = req.params;
-
-			const result = await sql`
-                SELECT *
+            const [_, token] = req.headers.authorization.split(" ");
+            const { id: userId } = decodeToken({ token });
+            const { id } = req.params;
+    
+            const product = await sql`
+                SELECT id
                 FROM "product"
-                WHERE id = ${id} AND userid = ${userId}
+                WHERE id = ${id} AND userId = ${userId}
             `;
+    
+            if (product.length === 0) {
+                return res.status(200).json({
+                    message: "Продукт не найден",
+                });
+            }
 
-			if (result.length === 0) {
-				return res.status(200).json({ message: "Product not found" });
-			}
-
-			res.json({ product: result[0] });
-		} catch (error) {
-			console.log(error);
-			res.status(200).json({ product: null });
-		}
+            await sql`
+                DELETE FROM "product"
+                WHERE id = ${id}
+            `;
+    
+            const user = await sql`
+                SELECT balance
+                FROM "users"
+                WHERE id = ${userId}
+            `;
+            
+            const newBalance = user[0].balance + 50;
+           const result = await sql`
+                UPDATE "users"
+                SET balance = ${newBalance}
+                WHERE id = ${userId}
+            `;
+    console.log(result);
+            res.json({ message: "Продукт успешно удалён!" });
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({ product: null });
+        }
 	},
 	deleteProductById: async (req, res) => {
 		try {
 			const [_, token] = req.headers.authorization.split(" ");
 			const { id: userId } = decodeToken({ token });
 			const { id } = req.params;
-
+			const date = new Date().toISOString();
 			const product = await sql`
-                SELECT id
-                FROM "product"
-                WHERE id = ${id} AND userId = ${userId}
-            `;
-
+				SELECT id
+				FROM "product"
+				WHERE id = ${id} AND userId = ${userId}
+			`;
+	
 			if (product.length === 0) {
 				return res.status(200).json({
 					message:
-						"Product not found or you don't have permission to delete it",
+						"Продукт не найден",
 				});
 			}
-
+	
 			await sql`
-                DELETE FROM "product"
-                WHERE id = ${id}
-            `;
-
-			res.json({ message: "Product deleted successfully" });
+				DELETE FROM "product"
+				WHERE id = ${id}
+			`;
+	
+			const user = await sql`
+				SELECT balance
+				FROM "users"
+				WHERE id = ${userId}
+			`;
+	
+			if (user.length === 0) {
+				return res.status(404).json({
+					message: "Пользователь не найден",
+				});
+			}
+	
+			const newBalance = user[0].balance + 50;
+	
+			await sql`
+				UPDATE "users"
+				SET balance = ${newBalance}
+				WHERE id = ${userId}
+			`;
+			await sql`INSERT INTO "operations" (userid, type, date, status, amount) VALUES (${userId}, 'Возврат средств', ${date}, 'Успешно', 50)`;
+			res.json({ message: "Продукт удалён, ваши вредства возвращены" });
 		} catch (error) {
 			console.log(error);
-			res.status(200).json({ product: null });
+			res.status(500).json({ product: null });
 		}
 	},
 	updateProduct: async (req, res) => {
@@ -247,7 +285,7 @@ const productController = {
 			if (product.length === 0) {
 				return res.status(200).json({
 					message:
-						"Product not found or you don't have permission to update it",
+						"Продукт не найден",
 				});
 			}
 
@@ -269,7 +307,7 @@ const productController = {
                 WHERE id = ${id}
             `;
 
-			res.json({ message: "Product updated successfully" });
+			res.json({ message: "Продукт успешно обновлён!" });
 		} catch (error) {
 			console.log(error);
 			res.status(500).json({ error: "Server error" });
