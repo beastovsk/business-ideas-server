@@ -141,7 +141,7 @@ const productController = {
 			let result;
 			if (isLatest) {
 				result = await sql`
-                    SELECT id, title, description, date, amount
+                    SELECT id, title, description, date, amount, status, priority
                     FROM "product"
                     WHERE userId = ${id}
                     ORDER BY date DESC
