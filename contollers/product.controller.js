@@ -174,7 +174,7 @@ const productController = {
 			const { id } = req.params;
 
 			const product = await sql`
-                SELECT id
+                SELECT *
                 FROM "product"
                 WHERE id = ${id} AND userId = ${userId}
             `;
