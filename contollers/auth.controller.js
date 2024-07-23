@@ -48,8 +48,6 @@ const authController = {
 			res.json({
 				token,
 				message: "Вы успешно авторизовались",
-				hasCampaign: !!user.campaign,
-				hasSubscription: !!user.subscriptionPlan,
 			});
 		} catch (error) {
 			console.log(error);
