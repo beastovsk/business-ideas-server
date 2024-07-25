@@ -26,7 +26,7 @@ const productController = {
 			const user =
 				await sql`SELECT balance FROM "users" WHERE id = ${userId}`;
 
-			if (user[0].balance < 100) {
+			if (user[0].balance < 300) {
 				return res.json({
 					message: "Недостаточно средств для генерации",
 				});
@@ -111,7 +111,7 @@ const productController = {
                     ${response.productName},
                     ${response.productDescription},
                     ${date},
-                    ${100},
+                    ${300},
                     ${JSON.stringify(info)},
                     ${"false"},
                     ${"created"},
@@ -120,9 +120,9 @@ const productController = {
                     ${userId}
                 ) RETURNING *;
             `;
-			const newBalance = user[0].balance - 100;
+			const newBalance = user[0].balance - 300;
 			await sql`UPDATE "users" SET balance = ${newBalance} WHERE id = ${userId} `;
-			await sql`INSERT INTO "operations" (userid, type, date, status, amount) VALUES (${userId}, 'Генерация продукта', ${date}, 'Успешно', 100)`;
+			await sql`INSERT INTO "operations" (userid, type, date, status, amount) VALUES (${userId}, 'Генерация продукта', ${date}, 'Успешно', 300)`;
 			res.status(200).json({
 				message: "Продукт успешно сгенерирован",
 				product: result[0],
@@ -226,17 +226,17 @@ const productController = {
 				});
 			}
 
-			const newBalance = user[0].balance + 50;
+			const newBalance = user[0].balance + 150;
 
 			await sql`
 				UPDATE "users"
 				SET balance = ${newBalance}
 				WHERE id = ${userId}
 			`;
-			await sql`INSERT INTO "operations" (userid, type, date, status, amount) VALUES (${userId}, 'Возврат средств', ${date}, 'Успешно', 50)`;
+			await sql`INSERT INTO "operations" (userid, type, date, status, amount) VALUES (${userId}, 'Возврат средств', ${date}, 'Успешно', 150)`;
 			res.json({
 				message:
-					"Продукт удалён, вернули вам 50 рублей в качестве подарка на генерацию следующего",
+					"Продукт удалён, вернули вам 150 рублей в качестве подарка на генерацию следующего",
 			});
 		} catch (error) {
 			console.log(error);
