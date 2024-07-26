@@ -82,12 +82,12 @@ const authController = {
 
 			const mailBody = `
 				<div>
-					<h1 style='color: #4880ff'>Marketing Helper</h1>
+					<h1 style='color: #111'>Startup Idea</h1>
 					<h2>
-						Ваш <i style='color: #4880ff'>код</i> для подтверждения почты:</h2>
+						Ваш <i style='color: #111'>код</i> для подтверждения почты:</h2>
 					<br/> 
 					<h3>
-						<b style='color: #4880ff' class='token'>${confirmToken}</b>
+						<b style='color: #ccc' class='token'>${confirmToken}</b>
 					</h3>
 				</div>
 			`;
